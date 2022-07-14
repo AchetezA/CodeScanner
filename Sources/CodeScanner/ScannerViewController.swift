@@ -16,6 +16,7 @@ extension CodeScannerView {
         
         var delegate: ScannerCoordinator?
         private let showViewfinder: Bool
+        private let rectOfInterest: CGSize?
         
         private var isGalleryShowing: Bool = false {
             didSet {
@@ -26,13 +27,15 @@ extension CodeScannerView {
             }
         }
 
-        public init(showViewfinder: Bool = false) {
+        public init(showViewfinder: Bool = false, rectOfInterest: CGSize?) {
             self.showViewfinder = showViewfinder
+            self.rectOfInterest = rectOfInterest
             super.init(nibName: nil, bundle: nil)
         }
 
         required init?(coder: NSCoder) {
             self.showViewfinder = false
+            self.rectOfInterest = nil
             super.init(coder: coder)
         }
         
@@ -127,6 +130,7 @@ extension CodeScannerView {
         #else
         
         var captureSession: AVCaptureSession!
+        var metaDataOutput: AVCaptureMetadataOutput!
         var previewLayer: AVCaptureVideoPreviewLayer!
         let fallbackVideoCaptureDevice = AVCaptureDevice.default(for: .video)
 
@@ -181,6 +185,15 @@ extension CodeScannerView {
             previewLayer.frame = view.layer.bounds
             previewLayer.videoGravity = .resizeAspectFill
             view.layer.addSublayer(previewLayer)
+            
+            if let rectOfInterest = rectOfInterest {
+                let lRect = CGRect(x: (previewLayer.frame.width / 2) - (rectOfInterest.width / 2),
+                                   y: (previewLayer.frame.height / 2) - (rectOfInterest.height / 2),
+                                   width: rectOfInterest.width, height: rectOfInterest.height)
+                
+                metaDataOutput.rectOfInterest = previewLayer.metadataOutputRectConverted(fromLayerRect: lRect)
+            }
+
             addviewfinder()
 
             delegate?.reset()
@@ -247,20 +260,20 @@ extension CodeScannerView {
                 return
             }
 
-            if (captureSession.canAddInput(videoInput)) {
+            if captureSession.canAddInput(videoInput) {
                 captureSession.addInput(videoInput)
             } else {
                 delegate?.didFail(reason: .badInput)
                 return
             }
 
-            let metadataOutput = AVCaptureMetadataOutput()
+            metaDataOutput = AVCaptureMetadataOutput()
 
-            if (captureSession.canAddOutput(metadataOutput)) {
-                captureSession.addOutput(metadataOutput)
+            if captureSession.canAddOutput(metaDataOutput) {
+                captureSession.addOutput(metaDataOutput)
 
-                metadataOutput.setMetadataObjectsDelegate(delegate, queue: DispatchQueue.main)
-                metadataOutput.metadataObjectTypes = delegate?.parent.codeTypes
+                metaDataOutput.setMetadataObjectsDelegate(delegate, queue: DispatchQueue.main)
+                metaDataOutput.metadataObjectTypes = delegate?.parent.codeTypes
             } else {
                 delegate?.didFail(reason: .badOutput)
                 return

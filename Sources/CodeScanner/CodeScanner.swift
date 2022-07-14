@@ -60,6 +60,7 @@ public struct CodeScannerView: UIViewControllerRepresentable {
     public let codeTypes: [AVMetadataObject.ObjectType]
     public let scanMode: ScanMode
     public let scanInterval: Double
+    public var rectOfInterest: CGSize?
     public let showViewfinder: Bool
     public var simulatedData = ""
     public var shouldVibrateOnSuccess: Bool
@@ -72,6 +73,7 @@ public struct CodeScannerView: UIViewControllerRepresentable {
         codeTypes: [AVMetadataObject.ObjectType],
         scanMode: ScanMode = .once,
         scanInterval: Double = 2.0,
+        rectOfInterest: CGSize? = nil,
         showViewfinder: Bool = false,
         simulatedData: String = "",
         shouldVibrateOnSuccess: Bool = true,
@@ -81,6 +83,7 @@ public struct CodeScannerView: UIViewControllerRepresentable {
         completion: @escaping (Result<ScanResult, ScanError>) -> Void
     ) {
         self.codeTypes = codeTypes
+        self.rectOfInterest = rectOfInterest
         self.scanMode = scanMode
         self.showViewfinder = showViewfinder
         self.scanInterval = scanInterval
@@ -97,7 +100,7 @@ public struct CodeScannerView: UIViewControllerRepresentable {
     }
 
     public func makeUIViewController(context: Context) -> ScannerViewController {
-        let viewController = ScannerViewController(showViewfinder: showViewfinder)
+        let viewController = ScannerViewController(showViewfinder: showViewfinder, rectOfInterest: rectOfInterest)
         viewController.delegate = context.coordinator
         return viewController
     }

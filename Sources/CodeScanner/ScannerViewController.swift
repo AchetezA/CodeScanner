@@ -166,22 +166,28 @@ extension CodeScannerView {
 
         @objc func updateOrientation() {
             guard let orientation = view.window?.windowScene?.interfaceOrientation else { return }
+            guard captureSession != nil else {return}
             guard let connection = captureSession.connections.last, connection.isVideoOrientationSupported else { return }
             connection.videoOrientation = AVCaptureVideoOrientation(rawValue: orientation.rawValue) ?? .portrait
         }
 
-        override public func viewDidAppear(_ animated: Bool) {
-            super.viewDidAppear(animated)
-            updateOrientation()
-        }
-
         override public func viewWillAppear(_ animated: Bool) {
             super.viewWillAppear(animated)
-
+            setupPreview()
+        }
+      
+        private func setupPreview() {
+            guard captureSession != nil else {
+                DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(1)) {
+                    self.setupPreview()
+                }
+                return
+            }
+            
             if previewLayer == nil {
                 previewLayer = AVCaptureVideoPreviewLayer(session: captureSession)
             }
-
+            
             previewLayer.frame = view.layer.bounds
             previewLayer.videoGravity = .resizeAspectFill
             view.layer.addSublayer(previewLayer)
@@ -193,18 +199,20 @@ extension CodeScannerView {
                 
                 metaDataOutput.rectOfInterest = previewLayer.metadataOutputRectConverted(fromLayerRect: lRect)
             }
-
+            
             addviewfinder()
-
+            
             delegate?.reset()
-
+            
             if (captureSession?.isRunning == false) {
                 DispatchQueue.global(qos: .userInteractive).async {
                     self.captureSession.startRunning()
                 }
             }
+            
+            updateOrientation()
         }
-      
+        
         private func handleCameraPermission() {
           switch AVCaptureDevice.authorizationStatus(for: .video) {
           case .denied, .restricted:

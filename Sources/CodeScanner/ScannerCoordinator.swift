@@ -41,27 +41,29 @@ extension CodeScannerView {
                 let result = ScanResult(string: stringValue, type: readableObject.type)
 
                 switch parent.scanMode {
-                case .once:
-                    found(result)
-                    // make sure we only trigger scan once per use
-                    didFinishScanning = true
-
-                case .manual:
-                    if !didFinishScanning, isWithinManualCaptureInterval() {
+                    case .disable:
+                        break
+                    case .once:
                         found(result)
+                        // make sure we only trigger scan once per use
                         didFinishScanning = true
-                    }
-                    
-                case .oncePerCode:
-                    if !codesFound.contains(stringValue) {
-                        codesFound.insert(stringValue)
-                        found(result)
-                    }
-
-                case .continuous:
-                    if isPastScanInterval() {
-                        found(result)
-                    }
+                        
+                    case .manual:
+                        if !didFinishScanning, isWithinManualCaptureInterval() {
+                            found(result)
+                            didFinishScanning = true
+                        }
+                        
+                    case .oncePerCode:
+                        if !codesFound.contains(stringValue) {
+                            codesFound.insert(stringValue)
+                            found(result)
+                        }
+                        
+                    case .continuous:
+                        if isPastScanInterval() {
+                            found(result)
+                        }
                 }
             }
         }

@@ -37,6 +37,9 @@ public struct ScanResult {
 
 /// The operating mode for CodeScannerView.
 public enum ScanMode {
+    // Scan is disabled
+    case disable
+    
     /// Scan exactly one code, then stop.
     case once
 
